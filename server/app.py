@@ -1,3 +1,8 @@
-from flask import Flask
+import os
+from pool import conn
 
-app = Flask(__name__)
+cur = conn.cursor()
+conn.commit()
+
+cur.close()
+conn.close()
