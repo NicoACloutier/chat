@@ -31,9 +31,9 @@ def make_data(name: str, entered_password: str) -> tuple[str, str, str, str]:
     """
     password_salt = random.choices(string.printable, k=SALT_LENGTH)
     password_hash = find_hash(entered_password, password_salt)
-    return uuid.uuid4() name, password_hash, password_salt
+    return uuid.uuid4(), name, password_hash, password_salt
 
-def post_new_user(conn: psycopg2.connection) -> None:
+def post_new_user(conn) -> None:
     """
     Post a user to the database, given a POST request with a name and password.
     Arguments:
@@ -46,7 +46,7 @@ def post_new_user(conn: psycopg2.connection) -> None:
     entered_password = data["entered_password"]
     name, password_hash, password_salt = make_data(name, entered_password)
 
-def create_user_api(app: flask.Flask, conn: psycopg2.connection) -> None:
+def create_user_api(app: flask.Flask, conn) -> None:
     """
     Create a user API route.
     Arguments:
@@ -55,6 +55,6 @@ def create_user_api(app: flask.Flask, conn: psycopg2.connection) -> None:
     Returns:
         `None`
     """
-    @app.post(f"{ENDPOINT}")
+    @app.post(f"{ENDPOINT_NAME}")
     def post_user():
         post_new_user(conn)
