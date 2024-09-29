@@ -9,6 +9,3 @@ cur = conn.cursor()
 conn.commit()
 
 users.create_user_api(app, conn)
-
-cur.close()
-conn.close()

@@ -1,5 +1,6 @@
 import hashlib, uuid, psycopg2, flask
 import random, string
+from flask import request
 
 SALT_LENGTH = 20
 ENDPOINT_NAME = "/users"
@@ -33,18 +34,37 @@ def make_data(name: str, entered_password: str) -> tuple[str, str, str, str]:
     password_hash = find_hash(entered_password, password_salt)
     return uuid.uuid4(), name, password_hash, password_salt
 
-def post_new_user(conn) -> None:
+def post_new_user(conn) -> tuple[dict[str, str], int]:
     """
     Post a user to the database, given a POST request with a name and password.
     Arguments:
         `conn: psycopg2.connection`: PostgreSQL connection to execute on.
     Returns:
-        `None` (NOTE: posts to database)
+        `dict[str, str]`: Return information.
+        `int`: Response code.
     """
     data = flask.request.get_json()
     name = data["name"]
     entered_password = data["entered_password"]
     name, password_hash, password_salt = make_data(name, entered_password)
+    uid = uuid.uuid4()
+    with conn.cursor() as cursor:
+        cursor.execute(f"INSERT INTO users (id, name, hash, salt) VALUES ('{uid}', '{name}', '{password_hash}', '{password_salt}');")
+    return {"message": "User added."}, 200
+
+def get_user_from_id(conn, user_id: str) -> tuple[dict[str, str], int]:
+    """
+    Select a user from the identifier.
+    Arguments:
+        `conn: psycopg2.connection`: PostgreSQl connection to execute on.
+    Returns:
+        `dict[str, str]`: Returned data in dictionary form.
+        `int`: Response code.
+    """
+    with conn.cursor() as cursor:
+        cursor.execute(f"SELECT * FROM users WHERE id = '{user_id}';")
+        info = cursor.fetchone()
+    return info, 200
 
 def create_user_api(app: flask.Flask, conn) -> None:
     """
@@ -56,5 +76,10 @@ def create_user_api(app: flask.Flask, conn) -> None:
         `None`
     """
     @app.post(f"{ENDPOINT_NAME}")
-    def post_user():
-        post_new_user(conn)
+    def post_user() -> tuple[dict[str, str], int]:
+        return post_new_user(conn)
+
+    @app.get(f"{ENDPOINT_NAME}")
+    def get_user() -> tuple[dict[str, str], int]:
+        user_id = request.args.get("id")
+        return get_user_from_id(conn, user_id)
