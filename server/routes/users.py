@@ -1,6 +1,7 @@
 import hashlib, uuid, psycopg2, flask
 import random, string
 from flask import request
+from psycopg2 import ProgrammingError
 
 SALT_LENGTH = 20
 ENDPOINT_NAME = "/users"
@@ -56,16 +57,37 @@ def get_user_from_id(conn, user_id: str) -> tuple[dict[str, str], int]:
     """
     Select a user from the identifier.
     Arguments:
-        `conn: psycopg2.connection`: PostgreSQl connection to execute on.
+        `conn: psycopg2.connection`: PostgreSQL connection to execute on.
     Returns:
         `dict[str, str]`: Returned data in dictionary form.
         `int`: Response code.
     """
     with conn.cursor() as cursor:
         cursor.execute(f"SELECT * FROM users WHERE id = '{user_id}';")
-        info = cursor.fetchone()
+        try:
+            info = cursor.fetchone()
+        except ProgrammingError:
+            return {}, 404
     return info, 200
 
+def delete_user_from_id(conn, user_id: str) -> tuple[dict[str, str], int]:
+    """
+    Delete a user from a table with their ID.
+    Arguments:
+        `conn: psycopg2.connection`: PostgreSQL connection to execute on.
+        `user_id: str`: Unique ID of user to delete.
+    Returns:
+        `dict[str, str]`: Deleted row from table, if applicable.
+        `int`: Response code.
+    """
+    with conn.cursor() as cursor:
+        cursor.execute(f"DELETE * FROM users WHERE id = '{user_id}' RETURNING *;")
+        try:
+            info = cursor.fetchone()
+        except ProgrammingError:
+            return {}, 404
+    return info, 200
+        
 def create_user_api(app: flask.Flask, conn) -> None:
     """
     Create a user API route.
@@ -83,3 +105,8 @@ def create_user_api(app: flask.Flask, conn) -> None:
     def get_user() -> tuple[dict[str, str], int]:
         user_id = request.args.get("id")
         return get_user_from_id(conn, user_id)
+    
+    @app.delete(f"{ENDPOINT_NAME}")
+    def delete_user() -> tuple[dict[str, str], int]:
+        user_id = request.args.get("id")
+        return delete_user_from_id(conn, user_id)
