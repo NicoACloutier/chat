@@ -98,16 +98,16 @@ def create_user_api(app: flask.Flask, conn) -> None:
     """
     ENDPOINT_NAME = "/users"    
 
-    @app.post(f"{ENDPOINT_NAME}")
+    @app.post(ENDPOINT_NAME)
     def post_user() -> tuple[dict[str, str], int]:
         return post_new_user(conn)
 
-    @app.get(f"{ENDPOINT_NAME}")
+    @app.get(ENDPOINT_NAME)
     def get_user() -> tuple[dict[str, str], int]:
         user_id = request.args.get("id")
         return get_user_from_id(conn, user_id)
     
-    @app.delete(f"{ENDPOINT_NAME}")
+    @app.delete(ENDPOINT_NAME)
     def delete_user() -> tuple[dict[str, str], int]:
         user_id = request.args.get("id")
         return delete_user_from_id(conn, user_id)
