@@ -4,7 +4,6 @@ from flask import request
 from psycopg2 import ProgrammingError
 
 SALT_LENGTH = 20
-ENDPOINT_NAME = "/users"
 
 def find_hash(entered_password: str, salt: str) -> str:
     """
@@ -97,6 +96,8 @@ def create_user_api(app: flask.Flask, conn) -> None:
     Returns:
         `None`
     """
+    ENDPOINT_NAME = "/users"    
+
     @app.post(f"{ENDPOINT_NAME}")
     def post_user() -> tuple[dict[str, str], int]:
         return post_new_user(conn)
